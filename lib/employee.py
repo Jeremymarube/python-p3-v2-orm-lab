@@ -186,5 +186,38 @@ class Employee:
         return cls.instance_from_db(row) if row else None
 
     def reviews(self):
-        """Return list of reviews associated with current employee"""
-        pass
+        """Return a list of reviews for this employee"""
+        from review import Review  # Import here to avoid circular imports
+    
+    # Try committing the database in case transactions aren't being committed
+        try:
+          CURSOR.connection.commit()
+        except:
+         pass
+    
+    # Query the database
+        sql = "SELECT * FROM reviews WHERE employee_id = ?"
+        CURSOR.execute(sql, (self.id,))
+        rows = CURSOR.fetchall()
+    
+        print(f"Debug: After commit, found {len(rows)} rows for employee_id {self.id}")
+    
+    # If still no rows, let's check the table structure
+        if not rows:
+           CURSOR.execute("PRAGMA table_info(reviews)")
+           columns = CURSOR.fetchall()
+           print(f"Debug: Reviews table columns: {columns}")
+        
+           CURSOR.execute("SELECT * FROM reviews")
+           all_rows = CURSOR.fetchall()
+           print(f"Debug: All rows in reviews table: {all_rows}")
+    
+    # Convert rows to Review objects
+        reviews = []
+        for row in rows:
+            review = Review.instance_from_db(row)
+            reviews.append(review)
+    
+        return reviews
+    
+      
